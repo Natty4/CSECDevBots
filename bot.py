@@ -5,9 +5,9 @@ import emoji
 import os
 
 # Define your Telegram bot token and chat ID
-Token = 'Token'
+Token = 'TOKEN'
 archive_id = '-ID'
-admin_user_id = 'chat_id'
+admin_user_id = 'ID'
 
 # Create a Telegram bot instance
 bot = telegram.Bot(token=Token)
@@ -17,7 +17,7 @@ users_generated_name = set()
 print("Bot started")
 print('Listening...___________________________________--')
 
-def generate_unique_name(name.lower()):
+def generate_unique_name(name):
     
 
     # emojis = ['\U0001F600', '\U0001F601', '\U0001F602', '\U0001F603', '\U0001F604', '\U0001F605', '\U0001F606', '\U0001F607', '\U0001F608', '\U0001F609', '\U0001F60A', '\U0001F60B', '\U0001F60C', '\U0001F60D', '\U0001F60E', '\U0001F60F', '\U0001F610', '\U0001F611', '\U0001F612', '\U0001F613', '\U0001F614', '\U0001F615', '\U0001F616', '\U0001F617', '\U0001F618', '\U0001F619', '\U0001F61A', '\U0001F61B', '\U0001F61C', '\U0001F61D', '\U0001F61E', '\U0001F61F', '\U0001F620', '\U0001F621', '\U0001F622', '\U0001F623', '\U0001F624', '\U0001F625', '\U0001F626', '\U0001F627', '\U0001F628', '\U0001F629', '\U0001F62A', '\U0001F62B', '\U0001F62C', '\U0001F62D', '\U0001F62E', '\U0001F62F']
@@ -43,13 +43,13 @@ def generate_unique_name(name.lower()):
     print(random_emoji)
     
     # Concatenate the random emoji with the name
-    unique_name = f"dev_hackathon_z_{random_emoji}_{name}"
+    unique_name = f"dev_hackathon_z_{random_emoji}_{name.lower()}"
     
     # Check if the file with the same name already exists
     while os.path.exists(f"{unique_name}.txt"):
         # Choose a new random emoji
         random_emoji = random.choice(adjectives).lower()
-        unique_name = f"dev_hackathon_z_{random_emoji}_{name}"
+        unique_name = f"dev_hackathon_z_{random_emoji}_{name.lower()}"
     
     # Return the unique name
     return unique_name
@@ -63,6 +63,24 @@ users_context = {}
 users_generated_name = set()
 
 
+# Define the function to handle the '/send_to' command
+def send_to(update, context):
+    # Check if the user sending the command is the admin
+    user_id = str(update.effective_user.id)
+    if user_id != admin_user_id:
+        context.bot.send_message(chat_id=user_id, text="Sorry, you're not authorized to use this command.")
+        return
+    
+    # Parse the user ID and message from the command arguments
+    args = context.args
+    if len(args) < 2:
+        context.bot.send_message(chat_id=user_id, text="Usage: /send_to user_id message")
+        return
+    target_user_id = args[0]
+    message_text = ' '.join(args[1:])
+    
+    # Send the message to the target user through the bot
+    context.bot.send_message(chat_id=target_user_id, text=message_text)
 # Define the handle_message function
 def handle_message(update, context):
     # Get the user's information
@@ -117,7 +135,7 @@ def handle_message(update, context):
             
 
             # Send the user's information and generated name to the admin
-            message = f"New Name Generated:\nUsername: {username}\nFirst Name: {firstname}\nPhoto URL: {photo_url}\nGenerated Name: {unique_name}"
+            message = f"New Name Generated:\nUsername: {username}\nFirst Name: {firstname}\nPhoto URL: {photo_url}\nUser Id: {user_id}\nGenerated Name: {unique_name}"
             bot.send_message(chat_id=admin_user_id, text=message)
 
             # Send a thank you message tothe user
@@ -166,10 +184,12 @@ def main():
     updater = Updater(token=Token, use_context=True)
     dispatcher = updater.dispatcher
     
-    # Add the handlers
+    # Add the handlers for the commands & messages
+    send_to_handler = CommandHandler('send_to', send_to)
     start_handler = CommandHandler('start', start)
     clear_context_handler = CommandHandler('clear_context', clear_context)
     message_handler = MessageHandler(Filters.text, handle_message)
+    dispatcher.add_handler(send_to_handler)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(clear_context_handler)
     dispatcher.add_handler(message_handler)
